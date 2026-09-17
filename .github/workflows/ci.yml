@@ -10,14 +10,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 用户决策：macOS 仅 Apple Silicon（arm64）；Windows x64
         include:
-          # 交付平台（用户决策）：macOS 仅 Apple Silicon，Windows x64
           - os: macos-15
             arch: arm64
           - os: windows-latest
             arch: x64
-          # CI 专用：Linux runner 用于 gitleaks 安全扫描（不影响交付物）
           - os: ubuntu-latest
             arch: x64
     runs-on: ${{ matrix.os }}
@@ -32,6 +29,11 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.lock
           pip install -e .
+      - name: Install Qt system libs (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libegl1 libxkbcommon-x11-0 libxcb-xinerama0 libxcb-cursor0
       - name: Lint (ruff)
         run: ruff check .
       - name: Format check (ruff)
@@ -39,7 +41,9 @@ jobs:
       - name: Type check (mypy)
         run: mypy src/meetrec
       - name: Test (pytest)
-        run: pytest -q --cov=meetrec --cov-fail-under=70 -m "not accuracy and not ui and not slow"
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: pytest -q --cov=meetrec --cov-fail-under=70 -m "not accuracy and not slow"
       - name: Secret scan (gitleaks)
         if: runner.os == 'Linux'
         run: |

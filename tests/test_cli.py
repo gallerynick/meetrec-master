@@ -27,8 +27,8 @@ def test_info_flag():
     assert "Data dir:" in out
 
 
-def test_no_args():
+def test_no_gui_flag():
     buf = io.StringIO()
     with redirect_stdout(buf):
-        assert main([]) == 0
-    assert "M0 skeleton" in buf.getvalue()
+        assert main(["--no-gui"]) == 0
+    assert "初始化完成" in buf.getvalue()

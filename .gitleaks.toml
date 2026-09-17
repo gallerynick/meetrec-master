@@ -1,0 +1,14 @@
+# MeetRec Master gitleaks 配置
+# 说明：脱敏测试（tests/test_log_redaction.py）故意使用伪密钥作为夹具，
+# 以验证日志脱敏逻辑。这些是测试数据，不是真实凭证。
+
+title = "MeetRec Master gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "测试夹具：脱敏测试的伪密钥"
+paths = [
+    "tests/test_log_redaction.py",
+]

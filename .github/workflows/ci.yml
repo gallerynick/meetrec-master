@@ -11,10 +11,11 @@ jobs:
       fail-fast: false
       matrix:
         # 用户决策：macOS 仅 Apple Silicon（arm64）；Windows x64
-        - os: macos-15
-          arch: arm64
-        - os: windows-latest
-          arch: x64
+        include:
+          - os: macos-15
+            arch: arm64
+          - os: windows-latest
+            arch: x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

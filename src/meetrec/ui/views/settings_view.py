@@ -1,35 +1,39 @@
 """设置视图。
 
-M1 骨架：主题切换（明/暗）+ ASR 模型 / AI 提供方 / 数据目录占位。
-主题切换即整体替换 QSS（docs/09 §2 设计令牌），无残留。
+M2–M6 后接真实配置：主题切换、ASR 模型、AI API Key 管理、数据目录。
 """
 
 from __future__ import annotations
+
+import contextlib
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFrame,
     QLabel,
+    QLineEdit,
     QPushButton,
     QVBoxLayout,
 )
 
 from meetrec import __version__
 from meetrec.paths import data_dir
+from meetrec.secrets.vault import SecretVault
 from meetrec.ui.theme import SIZING
 
 __all__ = ["SettingsView"]
 
 
 class SettingsView(QFrame):
-    """设置视图：主题切换 + 占位配置项。"""
+    """设置视图：主题切换 + API Key 管理 + 存储信息。"""
 
-    theme_changed = Signal(bool)  # True = 深色
+    theme_changed = Signal(bool)
 
     def __init__(self, parent: QFrame | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("Content")
         self._dark = False
+        self._vault = SecretVault()
 
         root = QVBoxLayout(self)
         root.setContentsMargins(
@@ -54,20 +58,48 @@ class SettingsView(QFrame):
         # ── ASR 模型 ──
         root.addWidget(self._section("语音识别"))
         asr_desc = QLabel(
-            "模型：large-v3-turbo（默认） · 809M 参数 · MIT 许可\nM3 交付：应用内模型下载与切换。"
+            "默认模型：large-v3-turbo（809M 参数）· MIT 许可\n"
+            "可在「转写」步骤中选择模型，首次使用自动下载。"
         )
         asr_desc.setObjectName("EmptySubtitle")
         asr_desc.setWordWrap(True)
         root.addWidget(asr_desc)
 
-        # ── AI 提供方 ──
-        root.addWidget(self._section("纪要生成"))
-        ai_desc = QLabel(
-            "OpenAI / Anthropic / DeepSeek / 本地 Ollama\nM5 交付：API Key 管理与切换。"
-        )
-        ai_desc.setObjectName("EmptySubtitle")
-        ai_desc.setWordWrap(True)
-        root.addWidget(ai_desc)
+        # ── AI API Key 管理 ──
+        root.addWidget(self._section("纪要生成 · API Key"))
+        ai_panel = QFrame()
+        ai_panel.setObjectName("card")
+        ai_layout = QVBoxLayout(ai_panel)
+        ai_layout.setSpacing(8)
+        ai_layout.setContentsMargins(16, 12, 16, 12)
+
+        for provider in ("openai", "anthropic", "deepseek"):
+            row = QVBoxLayout()
+            row.setSpacing(4)
+            name_label = QLabel(f"{provider} API Key")
+            name_label.setStyleSheet("font-size: 12px; font-weight: 600;")
+            row.addWidget(name_label)
+
+            edit = QLineEdit()
+            edit.setEchoMode(QLineEdit.EchoMode.Password)
+            edit.setPlaceholderText(f"输入 {provider} API Key…")
+            edit.setFixedHeight(28)
+
+            save_btn = QPushButton("保存")
+            save_btn.setFixedHeight(28)
+            save_btn.setMaximumWidth(60)
+            save_btn.clicked.connect(
+                lambda checked, p=provider, e=edit: self._save_api_key(p, e.text().strip())
+            )
+
+            row_layout = QVBoxLayout()
+            row_layout.setSpacing(4)
+            row_layout.addWidget(edit)
+            row_layout.addWidget(save_btn, 0, Qt.AlignmentFlag.AlignLeft)
+            row.addLayout(row_layout)
+            ai_layout.addLayout(row)
+
+        root.addWidget(ai_panel)
 
         # ── 数据目录 ──
         root.addWidget(self._section("存储"))
@@ -79,7 +111,6 @@ class SettingsView(QFrame):
         root.addStretch()
 
     def _section(self, text: str) -> QLabel:
-        """小节标题。"""
         lbl = QLabel(text)
         lbl.setObjectName("PageTitle")
         lbl.setStyleSheet("font-size: 17px;")
@@ -90,11 +121,15 @@ class SettingsView(QFrame):
         self._theme_btn.setText("切换为浅色模式" if self._dark else "切换为深色模式")
         self.theme_changed.emit(self._dark)
 
+    def _save_api_key(self, provider: str, key: str) -> None:
+        if not key:
+            return
+        with contextlib.suppress(Exception):
+            self._vault.set(f"ai_{provider}", key)
+
     def is_dark(self) -> bool:
-        """当前设置面板中记录的主题（深色 = True）。"""
         return self._dark
 
     def set_dark(self, dark: bool) -> None:
-        """由主窗口同步主题状态（不触发回调）。"""
         self._dark = dark
         self._theme_btn.setText("切换为浅色模式" if dark else "切换为深色模式")

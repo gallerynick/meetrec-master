@@ -135,23 +135,25 @@ def test_flow_bar_step_click(qtbot):
 
 def test_library_empty_state(qtbot):
     """会议库空态显示新建会议按钮。"""
+    from meetrec.ui.service import MeetingService
     from meetrec.ui.views.library_view import LibraryView
 
-    v = LibraryView()
+    svc = MeetingService()
+    v = LibraryView(svc)
     qtbot.addWidget(v)
     v.show()
     # 默认空态（无会议）
     assert v._stack.currentWidget() is v._empty
-    v.set_has_meetings(True)
-    assert v._stack.currentWidget() is v._list
 
 
 def test_meeting_view_step_switch(qtbot):
     """会议详情视图：流程条点击切换步骤内容。"""
+    from meetrec.ui.service import MeetingService
     from meetrec.ui.views.meeting_view import MeetingView
 
-    v = MeetingView()
+    svc = MeetingService()
+    v = MeetingView(svc)
     qtbot.addWidget(v)
     v.show()
-    v._flow._on_click(4)
+    v._flow_bar._on_click(3)
     assert v._stack.currentIndex() == 3  # 0-based: step 4 → index 3

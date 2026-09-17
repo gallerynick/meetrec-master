@@ -1,10 +1,12 @@
 """会议库视图。
 
 对应 docs/09 §7.4 空态：会议库为空时显示引导文案 + 「新建会议」主按钮。
-M1 骨架：演示空态与占位列表的切换。
+M2–M6 后接真实 MeetingStore 数据。
 """
 
 from __future__ import annotations
+
+from functools import partial
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -17,6 +19,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from meetrec.models import Meeting
+from meetrec.ui.service import MeetingService
 from meetrec.ui.theme import SIZING
 
 __all__ = ["LibraryView"]
@@ -28,14 +32,15 @@ class LibraryView(QFrame):
     new_meeting_requested = Signal()
     meeting_selected = Signal(str)
 
-    def __init__(self, parent: QFrame | None = None) -> None:
+    def __init__(self, service: MeetingService, parent: QFrame | None = None) -> None:
         super().__init__(parent)
+        self._service = service
         self.setObjectName("Content")
         self._stack = QStackedWidget()
         self._empty: QWidget
         self._list: QWidget
         self._build()
-        self.set_has_meetings(False)
+        self._refresh()
 
         root = QVBoxLayout(self)
         root.setContentsMargins(
@@ -55,7 +60,6 @@ class LibraryView(QFrame):
         self._stack.addWidget(self._list)
 
     def _build_empty(self) -> QWidget:
-        """空态：引导文案 + 新建会议主按钮。"""
         box = QWidget()
         lay = QVBoxLayout(box)
         lay.setContentsMargins(0, 0, 0, 0)
@@ -84,31 +88,57 @@ class LibraryView(QFrame):
         return box
 
     def _build_list(self) -> QWidget:
-        """占位列表：两个演示会议项（M2 替换为真实存储）。"""
         box = QWidget()
         lay = QVBoxLayout(box)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(SIZING.space_sm)
-
-        for name, date in (("产品评审会", "2026-01-15"), ("需求讨论", "2026-01-14")):
-            row = QFrame()
-            row.setObjectName("NavItem")
-            row.setStyleSheet("border-radius: 8px;")
-            rl = QHBoxLayout(row)
-            rl.setContentsMargins(
-                SIZING.space_md, SIZING.space_sm, SIZING.space_md, SIZING.space_sm
-            )
-            rl.addWidget(QLabel(f"●  {name}"))
-            rl.addStretch()
-            date_lbl = QLabel(date)
-            date_lbl.setObjectName("Caption")
-            rl.addWidget(date_lbl)
-            row.setCursor(Qt.CursorShape.PointingHandCursor)
-            lay.addWidget(row)
-
+        self._list_layout = lay
         lay.addStretch()
         return box
 
-    def set_has_meetings(self, has: bool) -> None:
-        """切换空态 / 列表态。"""
+    def _refresh(self) -> None:
+        meetings = self._service.list_meetings()
+        has = len(meetings) > 0
         self._stack.setCurrentWidget(self._list if has else self._empty)
+
+        while self._list_layout.count():
+            item = self._list_layout.takeAt(0)
+            w = item.widget()
+            if w:
+                w.deleteLater()
+
+        for meeting in sorted(meetings, key=lambda m: m.created_at, reverse=True):
+            self._add_meeting_row(meeting)
+
+    def _add_meeting_row(self, meeting: Meeting) -> None:
+        row = QFrame()
+        row.setObjectName("NavItem")
+        row.setStyleSheet("border-radius: 8px;")
+        rl = QHBoxLayout(row)
+        rl.setContentsMargins(
+            SIZING.space_md, SIZING.space_sm, SIZING.space_md, SIZING.space_sm
+        )
+
+        status_icon = "●"
+        if meeting.has_summary():
+            status_icon = "✓"
+        elif meeting.has_transcript():
+            status_icon = "◐"
+        elif meeting.has_audio():
+            status_icon = "◌"
+
+        rl.addWidget(QLabel(f"{status_icon}  {meeting.display_title}"))
+        rl.addStretch()
+        date_lbl = QLabel(meeting.created_at[:10])
+        date_lbl.setObjectName("Caption")
+        rl.addWidget(date_lbl)
+
+        row.setCursor(Qt.CursorShape.PointingHandCursor)
+        row.mousePressEvent = partial(self._on_row_clicked, meeting.id)
+        self._list_layout.insertWidget(self._list_layout.count() - 1, row)
+
+    def _on_row_clicked(self, meeting_id: str) -> None:
+        self.meeting_selected.emit(meeting_id)
+
+    def refresh(self) -> None:
+        self._refresh()

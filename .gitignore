@@ -1,0 +1,108 @@
+# ============================================================
+# MeetRec Master · .gitignore
+# 原则：只提交源码与文档；虚拟环境、构建产物、模型、评测数据、密钥一律不入库
+# ============================================================
+
+# ---------- 1. Python 运行时 ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ---------- 2. 虚拟环境（tools/proto/.venv 达 239 MB，PyAV 带整套 ffmpeg 动态库）----------
+.venv/
+venv/
+env/
+tools/proto/.venv/
+
+# ---------- 3. 测试与静态检查缓存 ----------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+
+# ---------- 4. 构建产物（PyInstaller / wheel）----------
+build/
+dist/
+*.egg-info/
+.wheels/
+*.manifest
+*.spec.bak
+# 注意：build/meetrec.spec 本身是源码的一部分，不忽略；仅忽略 build/ 下的中间产物
+!build/meetrec.spec
+
+# ---------- 5. ASR 模型（单个 75 MB ~ 3 GB，一律运行时下载）----------
+models/
+*.ct2
+*.pt
+*.pth
+*.onnx
+*.tflite
+# HuggingFace 本地缓存
+.hf/
+cache/huggingface/
+
+# ---------- 6. 评测数据与音频（含真实会议录音与转写，敏感）----------
+# 准确率样本与 ground_truth 标注不入库，仅本地留存
+tests/accuracy/samples/
+tests/accuracy/ground_truth/
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.flac
+*.aiff
+*.ogg
+*.opus
+# 原型工具的输出报告（含转写片段）
+tools/proto/report-*.md
+tools/proto/smoke-report.md
+
+# ---------- 7. 密钥与证书（ADR-007 / ADR-012；即使当前不签名也预防）----------
+*.p12
+*.pfx
+*.p7b
+*.csr
+*.crt
+*.cer
+*.key
+*.pem
+secrets.json
+providers.json
+.env
+.env.*
+*.env
+# keyring 降级方案的加密文件
+*__vault__*
+
+# ---------- 8. IDE 与编辑器 ----------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# ---------- 9. macOS 系统文件 ----------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ---------- 10. 应用运行数据（若在源码目录内直接运行应用）----------
+data/
+meetrec-data/
+logs/
+*.log
+
+# ---------- 11. CI 与临时 ----------
+.cache/
+tmp/
+*.tmp

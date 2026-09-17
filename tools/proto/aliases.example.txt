@@ -1,0 +1,15 @@
+# 别名示例文件
+# 格式：关键词|别名1|别名2|别名3
+# 别名是 ASR 系统性错误写法，走精确匹配（置信度 1.0），跳过所有相似度门控
+
+张一鸣|章一鸣|张一明|张易鸣
+雷军|雷君|擂军
+李开复|李开福|李开付
+PySide6|PySide 6|Pyside6
+faster-whisper|Fast Whisper|faster whisper
+CTranslate2|CTranslate|CTranslate Two
+VAD|VADE|VAD模块
+Silero|赛乐罗|Cilero
+PyInstaller|Py Installer|派Installer
+Notarization|诺塔瑞泽|诺塔化
+SmartScreen|斯马特屏幕|Smart screen

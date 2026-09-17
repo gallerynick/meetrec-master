@@ -1,0 +1,22 @@
+# MeetRec Master 关键词示例文件
+# 每行一个关键词；# 开头为注释
+
+# 人名
+张一鸣
+雷军
+李开复
+
+# 产品名
+MeetRec Master
+PySide6
+faster-whisper
+
+# 术语
+CTranslate2
+initial_prompt
+VAD
+Silero
+PyInstaller
+Authenticode
+Notarization
+SmartScreen

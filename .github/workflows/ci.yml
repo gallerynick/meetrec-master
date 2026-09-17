@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        # 用户决策：macOS 仅 Apple Silicon（arm64）；Windows x64
+        - os: macos-15
+          arch: arm64
+        - os: windows-latest
+          arch: x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install (locked)
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e .
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Format check (ruff)
+        run: ruff format --check .
+      - name: Type check (mypy)
+        run: mypy src/meetrec
+      - name: Test (pytest)
+        run: pytest -q --cov=meetrec --cov-fail-under=70 -m "not accuracy and not ui and not slow"
+      - name: Secret scan (gitleaks)
+        if: runner.os == 'Linux'
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks detect --source . --redact --no-banner

@@ -21,24 +21,25 @@
 
 ```python
 class ProviderType(str, Enum):
-    OPENAI_COMPATIBLE = "openai_compatible"   # POST /chat/completions
-    ANTHROPIC_NATIVE  = "anthropic_native"    # POST /v1/messages
+    OPENAI_COMPATIBLE = "openai_compatible"  # POST /chat/completions
+    ANTHROPIC_NATIVE = "anthropic_native"  # POST /v1/messages
+
 
 @dataclass
 class ProviderProfile:
-    id: str                              # UUIDv4
-    name: str                            # 用户命名，如「DeepSeek 主账号」
+    id: str  # UUIDv4
+    name: str  # 用户命名，如「DeepSeek 主账号」
     type: ProviderType
-    base_url: str                        # 必填；自动补全尾随斜杠，校验为合法 URL
-    api_key: str                         # 必填；仅存内存，持久化走密钥库
-    model: str                           # 必填，非空
-    temperature: float | None = None     # 可选，0.0–2.0
-    max_tokens: int | None = None        # 可选；Anthropic 缺失时强制默认 4096
+    base_url: str  # 必填；自动补全尾随斜杠，校验为合法 URL
+    api_key: str  # 必填；仅存内存，持久化走密钥库
+    model: str  # 必填，非空
+    temperature: float | None = None  # 可选，0.0–2.0
+    max_tokens: int | None = None  # 可选；Anthropic 缺失时强制默认 4096
     timeout_seconds: float = 120.0
     max_retries: int = 3
     # 兼容开关（不同网关差异）
-    use_max_completion_tokens: bool = False   # OpenAI o 系列等新字段
-    api_version_header: str | None = None     # 如 2023-06-01
+    use_max_completion_tokens: bool = False  # OpenAI o 系列等新字段
+    api_version_header: str | None = None  # 如 2023-06-01
     extra_headers: dict[str, str] = field(default_factory=dict)
     enabled: bool = True
     is_default: bool = False
@@ -64,19 +65,21 @@ class ProviderProfile:
 ```python
 @dataclass(frozen=True)
 class SummaryRequest:
-    prompt: str                          # 已渲染完整 Prompt
-    transcript: str                      # 用于分片统计
+    prompt: str  # 已渲染完整 Prompt
+    transcript: str  # 用于分片统计
     max_input_tokens: int | None = None
+
 
 @dataclass(frozen=True)
 class SummaryResponse:
-    markdown: str                        # 原始返回正文
+    markdown: str  # 原始返回正文
     provider_id: str
     model: str
     usage: Usage | None
-    raw: dict                            # 原始响应（脱敏后落盘用于排查）
+    raw: dict  # 原始响应（脱敏后落盘用于排查）
     latency_ms: int
     attempts: int
+
 
 class SummaryProvider(Protocol):
     def build(self, profile, req) -> HttpRequest: ...
@@ -131,7 +134,7 @@ class SummaryProvider(Protocol):
 ### 4.3 响应解析
 
 ```python
-choices[0].message.content        # 正文
+choices[0].message.content  # 正文
 usage.prompt_tokens / completion_tokens / total_tokens
 ```
 

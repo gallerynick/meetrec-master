@@ -21,12 +21,12 @@
 ```python
 @dataclass(frozen=True)
 class RecorderConfig:
-    device_index: int | None      # None = 系统默认输入设备
+    device_index: int | None  # None = 系统默认输入设备
     sample_rate: int = 16000
     channels: int = 1
-    dtype: str = "float32"        # 输出统一 float32
-    block_size: int = 4096        # 每块采样数（约 256 ms）
-    input_format: str = "wav"     # 固定 wav（无损，ASR 直读）
+    dtype: str = "float32"  # 输出统一 float32
+    block_size: int = 4096  # 每块采样数（约 256 ms）
+    input_format: str = "wav"  # 固定 wav（无损，ASR 直读）
 ```
 
 ### 2.2 状态机
@@ -88,17 +88,18 @@ class RecorderConfig:
 @dataclass(frozen=True)
 class AsrParams:
     model_size: str = "large-v3-turbo"  # tiny/base/small/large-v3-turbo/large-v3
-    language: str = "zh"             # zh / en，显式指定避免语言检测
-    device: str = "cpu"              # cpu / cuda
-    compute_type: str = "int8"       # int8 / float16 / float32
-    beam_size: int = 5               # Stage 3 定向重解码时提高到 10
+    language: str = "zh"  # zh / en，显式指定避免语言检测
+    device: str = "cpu"  # cpu / cuda
+    compute_type: str = "int8"  # int8 / float16 / float32
+    beam_size: int = 5  # Stage 3 定向重解码时提高到 10
     best_of: int = 5
     temperature: tuple[float, ...] = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
-    vad_filter: bool = True          # Stage 3 短片段重解码时改为 False
-    word_timestamps: bool = True     # 纠错需要词级概率
+    vad_filter: bool = True  # Stage 3 短片段重解码时改为 False
+    word_timestamps: bool = True  # 纠错需要词级概率
     initial_prompt: str | None = None
-    initial_prompt_tokens: int = 0   # 注入预算统计
+    initial_prompt_tokens: int = 0  # 注入预算统计
     condition_on_previous_text: bool = True  # Stage 3 短片段重解码时改为 False
+
 
 @dataclass(frozen=True)
 class AsrSegment:
@@ -110,12 +111,13 @@ class AsrSegment:
     no_speech_prob: float
     words: tuple[AsrWord, ...]
 
+
 @dataclass(frozen=True)
 class AsrWord:
     start: float
     end: float
     word: str
-    probability: float | None        # 纠错门控用
+    probability: float | None  # 纠错门控用
 ```
 
 ### 4.2 引擎约束
@@ -156,21 +158,22 @@ class AsrWord:
 @dataclass
 class Keyword:
     id: str
-    text: str                        # 关键词正文（人名 / 产品名 / 术语）
-    aliases: tuple[str, ...] = ()    # 已知错误写法，如（"章一鸣","张一明"）；精确匹配优先
+    text: str  # 关键词正文（人名 / 产品名 / 术语）
+    aliases: tuple[str, ...] = ()  # 已知错误写法，如（"章一鸣","张一明"）；精确匹配优先
     group_id: str | None = None
-    priority: int = 50              # 1–100，用于 prompt 分组注入排序
+    priority: int = 50  # 1–100，用于 prompt 分组注入排序
     enabled: bool = True
     note: str = ""
-    hit_count: int = 0              # 近 10 次会议命中统计（命中率反馈闭环）
+    hit_count: int = 0  # 近 10 次会议命中统计（命中率反馈闭环）
     alias_hit_count: int = 0
-    revert_count: int = 0           # 被用户撤销次数
+    revert_count: int = 0  # 被用户撤销次数
+
 
 @dataclass
 class KeywordGroup:
     id: str
-    name: str                        # 如「产品名」「人名」「术语」
-    color: str = "#4A90D9"           # UI 区分色
+    name: str  # 如「产品名」「人名」「术语」
+    color: str = "#4A90D9"  # UI 区分色
     enabled: bool = True
 ```
 

@@ -312,10 +312,10 @@ ASR 错误是**系统性、可预测**的：同一个词的错误写法几乎每
 @dataclass
 class Keyword:
     id: str
-    text: str                          # 正确写法，如「张一鸣」
-    aliases: tuple[str, ...] = ()      # 已知错误写法，如（"章一鸣", "张一明", "张易鸣"）
+    text: str  # 正确写法，如「张一鸣」
+    aliases: tuple[str, ...] = ()  # 已知错误写法，如（"章一鸣", "张一明", "张易鸣"）
     group_id: str | None = None
-    priority: int = 50                # 1–100
+    priority: int = 50  # 1–100
     enabled: bool = True
     note: str = ""
 ```
@@ -407,9 +407,11 @@ def correct_region(final_text, keywords, policy):
     for kw in keywords:
         for alias in kw.aliases:
             for pos in find_all(final_text, alias):
-                records.append(CorrectionRecord(
-                    before=alias, after=kw.text, score=1.0,
-                    match_kind="alias", reverted=False))
+                records.append(
+                    CorrectionRecord(
+                        before=alias, after=kw.text, score=1.0, match_kind="alias", reverted=False
+                    )
+                )
     # 模糊匹配（跳过已被别名覆盖的位置）
     for span in enumerate_spans(final_text):
         if span.covered_by_alias():
@@ -421,14 +423,22 @@ def correct_region(final_text, keywords, policy):
             if s.score < best.get(kw, 0):
                 continue
             best[kw] = s
-    for span, s in resolve_conflicts(best):        # 区间不重叠 + M7 + M8
-        records.append(CorrectionRecord(
-            offset=span.start, length=len(span.text),
-            before=span.text, after=best_kw,
-            score=round(s.score, 4), match_kind="fuzzy",
-            pinyin_sim=s.pinyin_sim, edit_sim=s.edit_sim,
-            word_probs=tuple(probs),
-            rule_version="2.0", policy=policy))
+    for span, s in resolve_conflicts(best):  # 区间不重叠 + M7 + M8
+        records.append(
+            CorrectionRecord(
+                offset=span.start,
+                length=len(span.text),
+                before=span.text,
+                after=best_kw,
+                score=round(s.score, 4),
+                match_kind="fuzzy",
+                pinyin_sim=s.pinyin_sim,
+                edit_sim=s.edit_sim,
+                word_probs=tuple(probs),
+                rule_version="2.0",
+                policy=policy,
+            )
+        )
     return apply_records(final_text, records), records
 ```
 
@@ -441,25 +451,25 @@ def correct_region(final_text, keywords, policy):
 ```python
 @dataclass(frozen=True)
 class CorrectionRecord:
-    id: str                       # UUIDv4
+    id: str  # UUIDv4
     meeting_id: str
     segment_id: int
-    offset: int                   # 在合并后文本中的起始位置
+    offset: int  # 在合并后文本中的起始位置
     length: int
     before: str
     after: str
-    score: float                  # 综合分（别名匹配固定 1.0）
-    match_kind: str               # alias / fuzzy / redecode
-    source_stage: str             # stage3_redecode / stage4_correct
+    score: float  # 综合分（别名匹配固定 1.0）
+    match_kind: str  # alias / fuzzy / redecode
+    source_stage: str  # stage3_redecode / stage4_correct
     pinyin_sim: float | None
     edit_sim: float | None
     word_probs: tuple[float, ...]
-    baseline_text: str | None     # Stage 3 改动时保存基线原文
+    baseline_text: str | None  # Stage 3 改动时保存基线原文
     redecode_logprob: float | None
     baseline_logprob: float | None
-    rule_version: str             # 算法版本，便于回放
-    policy: str                   # conservative / balanced / aggressive
-    created_at: str               # ISO8601 UTC
+    rule_version: str  # 算法版本，便于回放
+    policy: str  # conservative / balanced / aggressive
+    created_at: str  # ISO8601 UTC
     reverted: bool = False
 ```
 
